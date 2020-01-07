@@ -4,11 +4,9 @@
 #include "Seeed_BME280.h"
 #include "BMP280.h"
 
-
 /*
    Define your Settings below
 */
-
 #define AUTO_SCAN 1
 #define BME_680 0
 #define BME_280 0
@@ -177,7 +175,7 @@ void loop()
 {
   if (accelWoke) {
     uint32_t now = TimerGetCurrentTime();
-    Serial.print(now); Serial.println("accel woke");
+    Serial.print(now); Serial.println("Water leak detected... inside loop");
   }
 
   switch ( DeviceState )
