@@ -1,6 +1,8 @@
 #include "LoRaWan_APP.h"
 #include <Region.h>
 #include "Arduino.h"
+#include "Seeed_BME280.h"
+#include "BMP280.h"
 
 
 /*
@@ -62,12 +64,26 @@ uint32_t APP_TX_DUTYCYCLE = (150000); // 2.5 mints Formuala divide the time valu
 
 //uint32_t APP_TX_DUTYCYCLE = (24 * 60 * 60 * 1000); // 24h
 
-#include "Seeed_BME280.h"
-#include "BMP280.h"
 
+
+
+bool BME_680_e[8] = {0, 0, 0, 0, 0, 0, 0, 0};  // 1
+bool BME_280_e[8] = {0, 0, 0, 0, 0, 0, 0, 0};  // 2
+
+uint8_t sensortype = 0;
+
+float Temperature, Humidity, Pressure, lux, co2, tvoc;
+uint16_t baseline, baselinetemp;
+int count;
+int maxtry = 50;
+
+
+BME280 bme280;
 /* Prepares the payload of the frame */
 static bool prepareTxFrame( uint8_t port )
 {
+ AppDataSize = 0;
+  int pnr = 0;
   int head;
   AppPort = port;
   switch (port) {
@@ -78,8 +94,51 @@ static bool prepareTxFrame( uint8_t port )
       break;
     case 2: //  send environmental data
       Serial.println("Sending environmental data");
-      AppDataSize = 1;//AppDataSize max value is 64
-      AppData[0] = 0xA0; // set to something else useful
+      /*
+      BME280
+    */
+    if (BME_280_e[pnr])
+    {
+      sensortype = 2;
+#if (ModularNode == 1)
+      Wire.begin();
+      tcaselect(pnr);
+      delay(100);
+#endif
+      if (!bme280.init())
+      {
+        Serial.println("  BME280 error!");
+      }
+      delay(1000);
+      Temperature = bme280.getTemperature();
+      Pressure = bme280.getPressure() / 100.0;
+      Humidity = bme280.getHumidity();
+
+      Wire.end();
+
+      AppData[AppDataSize++] = pnr;
+      AppData[AppDataSize++] = 2;
+
+      AppData[AppDataSize++] = (uint8_t)((int)((Temperature + 100.0) * 10.0) >> 8);
+      AppData[AppDataSize++] = (uint8_t)((int)((Temperature + 100.0) * 10.0));
+
+      AppData[AppDataSize++] = (uint8_t)((int)(Humidity * 10.0) >> 8);
+      AppData[AppDataSize++] = (uint8_t)((int)(Humidity * 10.0));
+
+      AppData[AppDataSize++] = (uint8_t)((int)(Pressure * 10.0) >> 8);
+      
+      AppData[AppDataSize++] = (uint8_t)((int)(Pressure * 10.0));
+
+      Serial.print("  BME280: T = ");
+      Serial.print(Temperature);
+      Serial.print("C, RH = ");
+      Serial.print(Humidity);
+      Serial.print(" %, Pressure = ");
+      Serial.print(Pressure);
+      Serial.println(" hPA");
+    }
+
+
       break;
   }
   return true;
