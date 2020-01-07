@@ -4,25 +4,24 @@
 #include "Seeed_BME280.h"
 #include "BMP280.h"
 
-
 /*
    Define your Settings below
 */
 
-#define AUTO_SCAN 1
-#define BME_680 0
 #define BME_280 0
-#define CCS_811 0
 #define BMP_280 0
-#define BMP_180 0
-#define HDC_1080 0
-#define BH_1750 0
-#define SHT_2X 0
-#define ADS_1015 0
-#define MPU_9250 0
-#define LR_VL53L1X 0
-#define HMC_5883L 0
-#define One_Wire 0
+/* #define BMP_180 0
+  #define HDC_1080 0
+  #define BH_1750 0
+  #define SHT_2X 0
+  #define ADS_1015 0
+  #define MPU_9250 0
+  #define LR_VL53L1X 0
+  #define HMC_5883L 0
+  #define One_Wire 0
+  //#define AUTO_SCAN 1
+//#define BME_680 0
+  */
 
 #define ModularNode 0  // TCS9548A I2C 8 port Switch
 
@@ -67,22 +66,22 @@ uint32_t APP_TX_DUTYCYCLE = (150000); // 2.5 mints Formuala divide the time valu
 
 
 
-bool BME_680_e[8] = {0, 0, 0, 0, 0, 0, 0, 0};  // 1
+//bool BME_680_e[8] = {0, 0, 0, 0, 0, 0, 0, 0};  // 1
 bool BME_280_e[8] = {0, 0, 0, 0, 0, 0, 0, 0};  // 2
 
 uint8_t sensortype = 0;
 
 float Temperature, Humidity, Pressure, lux, co2, tvoc;
-uint16_t baseline, baselinetemp;
-int count;
-int maxtry = 50;
+/*uint16_t baseline, baselinetemp;
+  int count;
+  int maxtry = 50; */
 
 
 BME280 bme280;
 /* Prepares the payload of the frame */
 static bool prepareTxFrame( uint8_t port )
 {
- AppDataSize = 0;
+  AppDataSize = 0;
   int pnr = 0;
   int head;
   AppPort = port;
@@ -95,48 +94,48 @@ static bool prepareTxFrame( uint8_t port )
     case 2: //  send environmental data
       Serial.println("Sending environmental data");
       /*
-      BME280
-    */
-    if (BME_280_e[pnr])
-    {
-      sensortype = 2;
-#if (ModularNode == 1)
-      Wire.begin();
-      tcaselect(pnr);
-      delay(100);
-#endif
-      if (!bme280.init())
+        BME280
+      */
+      if (BME_280_e[pnr])
       {
-        Serial.println("  BME280 error!");
+        sensortype = 2;
+#if (ModularNode == 1)
+        Wire.begin();
+        tcaselect(pnr);
+        delay(100);
+#endif
+        if (!bme280.init())
+        {
+          Serial.println("  BME280 error!");
+        }
+        delay(1000);
+        Temperature = bme280.getTemperature();
+        Pressure = bme280.getPressure() / 100.0;
+        Humidity = bme280.getHumidity();
+
+        Wire.end();
+
+        AppData[AppDataSize++] = pnr;
+        AppData[AppDataSize++] = 2;
+
+        AppData[AppDataSize++] = (uint8_t)((int)((Temperature + 100.0) * 10.0) >> 8);
+        AppData[AppDataSize++] = (uint8_t)((int)((Temperature + 100.0) * 10.0));
+
+        AppData[AppDataSize++] = (uint8_t)((int)(Humidity * 10.0) >> 8);
+        AppData[AppDataSize++] = (uint8_t)((int)(Humidity * 10.0));
+
+        AppData[AppDataSize++] = (uint8_t)((int)(Pressure * 10.0) >> 8);
+
+        AppData[AppDataSize++] = (uint8_t)((int)(Pressure * 10.0));
+
+        Serial.print("  BME280: T = ");
+        Serial.print(Temperature);
+        Serial.print("C, RH = ");
+        Serial.print(Humidity);
+        Serial.print(" %, Pressure = ");
+        Serial.print(Pressure);
+        Serial.println(" hPA");
       }
-      delay(1000);
-      Temperature = bme280.getTemperature();
-      Pressure = bme280.getPressure() / 100.0;
-      Humidity = bme280.getHumidity();
-
-      Wire.end();
-
-      AppData[AppDataSize++] = pnr;
-      AppData[AppDataSize++] = 2;
-
-      AppData[AppDataSize++] = (uint8_t)((int)((Temperature + 100.0) * 10.0) >> 8);
-      AppData[AppDataSize++] = (uint8_t)((int)((Temperature + 100.0) * 10.0));
-
-      AppData[AppDataSize++] = (uint8_t)((int)(Humidity * 10.0) >> 8);
-      AppData[AppDataSize++] = (uint8_t)((int)(Humidity * 10.0));
-
-      AppData[AppDataSize++] = (uint8_t)((int)(Pressure * 10.0) >> 8);
-      
-      AppData[AppDataSize++] = (uint8_t)((int)(Pressure * 10.0));
-
-      Serial.print("  BME280: T = ");
-      Serial.print(Temperature);
-      Serial.print("C, RH = ");
-      Serial.print(Humidity);
-      Serial.print(" %, Pressure = ");
-      Serial.print(Pressure);
-      Serial.println(" hPA");
-    }
 
 
       break;
@@ -163,6 +162,11 @@ void setup() {
   memcpy(DevEui, myDevEui, sizeof(myDevEui));
   memcpy(AppEui, myAppEui, sizeof(myAppEui));
   memcpy(AppKey, myAppKey, sizeof(myAppKey));
+
+  #if (BME_280 == 1)
+  BME_280_e[0] = 1;
+#endif
+
   BoardInitMcu();
 
   DeviceState = DEVICE_STATE_INIT;
@@ -177,7 +181,7 @@ void loop()
 {
   if (accelWoke) {
     uint32_t now = TimerGetCurrentTime();
-    Serial.print(now); Serial.println("accel woke");
+    Serial.print(now); Serial.println("Water leak detected... inside loop");
   }
 
   switch ( DeviceState )
