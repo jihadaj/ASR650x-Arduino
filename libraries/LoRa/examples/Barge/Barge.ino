@@ -2,13 +2,13 @@
 #include <Region.h>
 #include "Arduino.h"
 #include "Seeed_BME280.h"
-#include "BMP280.h"
+
 
 /*
    Define your Settings below
 */
 
-#define BME_280 0
+#define BME_280 1
 #define BMP_280 0
 /* #define BMP_180 0
   #define HDC_1080 0
@@ -25,8 +25,8 @@
 
 #define ModularNode 0  // TCS9548A I2C 8 port Switch
 
-const char myDevEui[] = { 0x1C, 0x76, 0xD2, 0xD7, 0xE8, 0x76, 0x89, 0x00 } ;
-const char myAppEui[] = { 0xF2, 0x7E, 0x02, 0xD0, 0x7E, 0xD5, 0xB3, 0x70 } ;
+const char myDevEui[] = { 0x00, 0x89, 0x76, 0xE8, 0xD7, 0xD2, 0x76, 0x1C } ;
+const char myAppEui[] = { 0x70, 0xB3, 0xD5, 0x7E, 0xD0, 0x02, 0x7E, 0xF2 };
 const char myAppKey[] = { 0xFA, 0x54, 0x0C, 0x83, 0xC6, 0xF8, 0xAA, 0xC0, 0xE0, 0x0A, 0x8B, 0xC3, 0x89, 0x24, 0x54, 0x92 };
 
 // The interrupt pin is attached to D4/GPIO1
@@ -96,6 +96,7 @@ static bool prepareTxFrame( uint8_t port )
       /*
         BME280
       */
+      
       if (BME_280_e[pnr])
       {
         sensortype = 2;
@@ -164,7 +165,7 @@ void setup() {
   memcpy(AppKey, myAppKey, sizeof(myAppKey));
 
   #if (BME_280 == 1)
-  BME_280_e[0] = 1;
+  BME_280_e[0] = 0;
 #endif
 
   BoardInitMcu();
@@ -229,7 +230,7 @@ void loop()
           accelWoke = false;
         }
         LoRaWAN.Sleep();
-        Serial.println("LoRaWAN.Sleep() finished");
+       // Serial.println("After calling LoraWan.sleep()");
         break;
       }
     default:
