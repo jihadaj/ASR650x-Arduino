@@ -2,9 +2,31 @@
 #include <Region.h>
 #include "Arduino.h"
 
-const char myDevEui[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-const char myAppEui[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-const char myAppKey[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+/*
+   Define your Settings below
+*/
+
+#define AUTO_SCAN 1
+#define BME_680 0
+#define BME_280 0
+#define CCS_811 0
+#define BMP_280 0
+#define BMP_180 0
+#define HDC_1080 0
+#define BH_1750 0
+#define SHT_2X 0
+#define ADS_1015 0
+#define MPU_9250 0
+#define LR_VL53L1X 0
+#define HMC_5883L 0
+#define One_Wire 0
+
+#define ModularNode 0  // TCS9548A I2C 8 port Switch
+
+const char myDevEui[] = { 0x1C, 0x76, 0xD2, 0xD7, 0xE8, 0x76, 0x89, 0x00 } ;
+const char myAppEui[] = { 0xF2, 0x7E, 0x02, 0xD0, 0x7E, 0xD5, 0xB3, 0x70 } ;
+const char myAppKey[] = { 0xFA, 0x54, 0x0C, 0x83, 0xC6, 0xF8, 0xAA, 0xC0, 0xE0, 0x0A, 0x8B, 0xC3, 0x89, 0x24, 0x54, 0x92 };
 
 // The interrupt pin is attached to D4/GPIO1
 #define INT_PIN GPIO1
@@ -36,7 +58,12 @@ uint8_t ConfirmedNbTrials = 8;
 uint8_t AppPort = 1;
 
 /*the application data transmission duty cycle.  value in [ms].*/
-uint32_t APP_TX_DUTYCYCLE = (24 * 60 * 60 * 1000); // 24h
+uint32_t APP_TX_DUTYCYCLE = (150000); // 2.5 mints Formuala divide the time value by 60000
+
+//uint32_t APP_TX_DUTYCYCLE = (24 * 60 * 60 * 1000); // 24h
+
+#include "Seeed_BME280.h"
+#include "BMP280.h"
 
 /* Prepares the payload of the frame */
 static bool prepareTxFrame( uint8_t port )
@@ -44,13 +71,13 @@ static bool prepareTxFrame( uint8_t port )
   int head;
   AppPort = port;
   switch (port) {
-    case 1: // woke up from interrupt
+    case 1: // woke up from interrupt- Water leak detected
       Serial.println("Sending data packet");
       AppDataSize = 1;//AppDataSize max value is 64
-      AppData[0] = 0xFF; // set to something useful
+      AppData[0] = 0x01; // set to something useful
       break;
-    case 2: // daily wake up
-      Serial.println("Sending dev status packet");
+    case 2: //  send environmental data
+      Serial.println("Sending environmental data");
       AppDataSize = 1;//AppDataSize max value is 64
       AppData[0] = 0xA0; // set to something else useful
       break;
