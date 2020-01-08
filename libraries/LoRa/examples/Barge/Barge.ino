@@ -97,14 +97,9 @@ static bool prepareTxFrame( uint8_t port )
         BME280
       */
       
-      if (BME_280_e[pnr])
-      {
+   
         sensortype = 2;
-#if (ModularNode == 1)
-        Wire.begin();
-        tcaselect(pnr);
-        delay(100);
-#endif
+
         if (!bme280.init())
         {
           Serial.println("  BME280 error!");
@@ -113,8 +108,6 @@ static bool prepareTxFrame( uint8_t port )
         Temperature = bme280.getTemperature();
         Pressure = bme280.getPressure() / 100.0;
         Humidity = bme280.getHumidity();
-
-        Wire.end();
 
         AppData[AppDataSize++] = pnr;
         AppData[AppDataSize++] = 2;
@@ -140,7 +133,7 @@ static bool prepareTxFrame( uint8_t port )
 
 
       break;
-  }
+}
   return true;
 }
 
