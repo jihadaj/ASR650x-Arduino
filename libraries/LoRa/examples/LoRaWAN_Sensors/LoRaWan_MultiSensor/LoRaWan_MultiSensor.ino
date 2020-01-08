@@ -68,7 +68,7 @@ uint8_t ConfirmedNbTrials = 8;
 String wasnver = "2.0.4";
 
 #include "BH1750.h"
-#include "BMP280.h"
+
 #include "HDC1080.h"
 #include "CCS811.h"
 #include "hal/soc/flash.h"
