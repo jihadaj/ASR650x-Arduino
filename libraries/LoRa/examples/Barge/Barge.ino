@@ -10,20 +10,7 @@
 
 #define BME_280 1
 #define BMP_280 0
-/* #define BMP_180 0
-  #define HDC_1080 0
-  #define BH_1750 0
-  #define SHT_2X 0
-  #define ADS_1015 0
-  #define MPU_9250 0
-  #define LR_VL53L1X 0
-  #define HMC_5883L 0
-  #define One_Wire 0
-  //#define AUTO_SCAN 1
-//#define BME_680 0
-  */
 
-#define ModularNode 0  // TCS9548A I2C 8 port Switch
 
 const char myDevEui[] = { 0x00, 0x89, 0x76, 0xE8, 0xD7, 0xD2, 0x76, 0x1C } ;
 const char myAppEui[] = { 0x70, 0xB3, 0xD5, 0x7E, 0xD0, 0x02, 0x7E, 0xF2 };
@@ -31,8 +18,36 @@ const char myAppKey[] = { 0xFA, 0x54, 0x0C, 0x83, 0xC6, 0xF8, 0xAA, 0xC0, 0xE0, 
 
 // The interrupt pin is attached to D4/GPIO1
 #define INT_PIN GPIO1
+bool accelWoke = false; //setting to true denotes the water-leak
 
-bool accelWoke = false;
+
+#ifndef LoraWan_RGB
+#define LoraWan_RGB 0
+#endif
+
+#ifndef AT_SUPPORT
+#define AT_SUPPORT 0
+#endif
+
+#ifndef ACTIVE_REGION
+#define ACTIVE_REGION LORAMAC_REGION_EU868
+#endif
+
+#ifndef LORAWAN_CLASS
+#define LORAWAN_CLASS CLASS_A
+#endif
+
+#ifndef LORAWAN_NETMODE
+#define LORAWAN_NETMODE 0
+#endif
+
+#ifndef LORAWAN_ADR
+#define LORAWAN_ADR 1
+#endif
+
+#ifndef LORAWAN_Net_Reserve
+#define LORAWAN_Net_Reserve 1
+#endif
 
 DeviceClass_t  CLASS = LORAWAN_CLASS;
 
@@ -54,8 +69,9 @@ bool IsTxConfirmed = false;
 uint8_t ConfirmedNbTrials = 8;
 
 /* Application port */
-#define DEVPORT 2
-#define APPPORT 1
+#define DEVPORT 2  // Used inside the preparingthedata to swith which data to send. Data will be send in normal state 
+#define APPPORT 1   // Data will be send when an interuppt occurs.
+
 uint8_t AppPort = 1;
 
 /*the application data transmission duty cycle.  value in [ms].*/
@@ -64,20 +80,11 @@ uint32_t APP_TX_DUTYCYCLE = (150000); // 2.5 mints Formuala divide the time valu
 //uint32_t APP_TX_DUTYCYCLE = (24 * 60 * 60 * 1000); // 24h
 
 
-
-
-//bool BME_680_e[8] = {0, 0, 0, 0, 0, 0, 0, 0};  // 1
-bool BME_280_e[8] = {0, 0, 0, 0, 0, 0, 0, 0};  // 2
-
+//bool BME_280_e[8] = {0, 0, 0, 0, 0, 0, 0, 0};  // 2
 uint8_t sensortype = 0;
-
 float Temperature, Humidity, Pressure, lux, co2, tvoc;
-/*uint16_t baseline, baselinetemp;
-  int count;
-  int maxtry = 50; */
-
-
 BME280 bme280;
+
 /* Prepares the payload of the frame */
 static bool prepareTxFrame( uint8_t port )
 {
@@ -89,7 +96,7 @@ static bool prepareTxFrame( uint8_t port )
     case 1: // woke up from interrupt- Water leak detected
       Serial.println("Sending data packet");
       AppDataSize = 1;//AppDataSize max value is 64
-      AppData[0] = 0x01; // set to something useful
+      AppData[0] = 0x01; // Send the decimal one to denotes the leak
       break;
     case 2: //  send environmental data
       Serial.println("Sending environmental data");
@@ -97,9 +104,12 @@ static bool prepareTxFrame( uint8_t port )
         BME280
       */
       
+<<<<<<< HEAD
    
         sensortype = 2;
 
+=======
+>>>>>>> 632d49e8fb99a319e731e9c54ffdb35402ea4fcb
         if (!bme280.init())
         {
           Serial.println("  BME280 error!");
@@ -129,7 +139,7 @@ static bool prepareTxFrame( uint8_t port )
         Serial.print(" %, Pressure = ");
         Serial.print(Pressure);
         Serial.println(" hPA");
-      }
+      
 
 
       break;
@@ -148,11 +158,15 @@ void accelWakeup()
 }
 
 void setup() {
-  Serial.begin(115200);
+   Serial.begin(115200);
+     Wire.begin();  
+   pinMode(Vext, OUTPUT);
+  digitalWrite(Vext, LOW);
+  delay(500);
+ 
 
   delay(200); // wait for stable
   accelWoke = false;
-
   memcpy(DevEui, myDevEui, sizeof(myDevEui));
   memcpy(AppEui, myAppEui, sizeof(myAppEui));
   memcpy(AppKey, myAppKey, sizeof(myAppKey));
