@@ -88,15 +88,15 @@ BME280 bme280;
 /* Prepares the payload of the frame */
 static bool prepareTxFrame( uint8_t port )
 {
-  AppDataSize = 0;
+  AppDataSize = 0; //AppDataSize max value is 64
   int pnr = 0;
-  int head;
   AppPort = port;
   switch (port) {
     case 1: // woke up from interrupt- Water leak detected
       Serial.println("Sending data packet");
-      AppDataSize = 1;//AppDataSize max value is 64
-      AppData[0] = 0x01; // Send the decimal one to denotes the leak
+        AppData[AppDataSize++] = pnr; // First byte
+        AppData[AppDataSize++] = 1; // second byte
+      AppData[AppDataSize++] = 0x01; // Third byte Send the decimal one to denotes the leak
       break;
     case 2: //  send environmental data
       Serial.println("Sending environmental data");
@@ -138,11 +138,14 @@ static bool prepareTxFrame( uint8_t port )
         Serial.print(" %, Pressure = ");
         Serial.print(Pressure);
         Serial.println(" hPA");
-      
-
-
       break;
 }
+uint16_t BatteryVoltage = GetBatteryVoltage();
+  AppData[AppDataSize++] = (uint8_t)(BatteryVoltage >> 8);
+  AppData[AppDataSize++] = (uint8_t)BatteryVoltage;
+  Serial.print("BatteryVoltage: ");
+  Serial.print(BatteryVoltage);
+  Serial.println();
   return true;
 }
 
@@ -242,5 +245,23 @@ void loop()
         DeviceState = DEVICE_STATE_INIT;
         break;
       }
+  }
+}
+void DownLinkDataHandle(McpsIndication_t *mcpsIndication)
+{
+  Serial.printf("+REV DATA:%s,RXSIZE %d,PORT %d\r\n",mcpsIndication->RxSlot?"RXWIN2":"RXWIN1",mcpsIndication->BufferSize,mcpsIndication->Port);
+  Serial.print("+REV DATA:");
+  for(uint8_t i=0;i<mcpsIndication->BufferSize;i++) {
+    Serial.printf("%02X",mcpsIndication->Buffer[i]);
+  }
+  Serial.println();
+  for(uint8_t i=0;i<mcpsIndication->BufferSize;i++) {
+    if (mcpsIndication->Buffer[i] == 220) { // DC for APP_TX_DUTYCYCLE; 0D BB A0  for 900000 (15min); 04 93 E0 for 300000 (5min)
+      APP_TX_DUTYCYCLE = mcpsIndication->Buffer[i++]<<32|mcpsIndication->Buffer[i++]<<16|mcpsIndication->Buffer[i++]<<8|mcpsIndication->Buffer[i++];
+      Serial.print("  new DutyCycle received: ");
+      Serial.print(APP_TX_DUTYCYCLE);
+      Serial.println("ms");
+      SaveDr();
+    }
   }
 }
