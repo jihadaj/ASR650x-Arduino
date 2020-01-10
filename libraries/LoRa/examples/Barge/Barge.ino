@@ -75,7 +75,7 @@ uint8_t ConfirmedNbTrials = 8;
 uint8_t AppPort = 1;
 
 /*the application data transmission duty cycle.  value in [ms].*/
-uint32_t APP_TX_DUTYCYCLE = (150000); // 2.5 mints Formuala divide the time value by 60000
+uint32_t APP_TX_DUTYCYCLE = (600000); // send every 10 mints Formuala divide the time value by 60000
 
 //uint32_t APP_TX_DUTYCYCLE = (24 * 60 * 60 * 1000); // 24h
 
@@ -104,12 +104,11 @@ static bool prepareTxFrame( uint8_t port )
         BME280
       */
       
-<<<<<<< HEAD
+
    
         sensortype = 2;
 
-=======
->>>>>>> 632d49e8fb99a319e731e9c54ffdb35402ea4fcb
+
         if (!bme280.init())
         {
           Serial.println("  BME280 error!");
@@ -171,9 +170,7 @@ void setup() {
   memcpy(AppEui, myAppEui, sizeof(myAppEui));
   memcpy(AppKey, myAppKey, sizeof(myAppKey));
 
-  #if (BME_280 == 1)
-  BME_280_e[0] = 0;
-#endif
+
 
   BoardInitMcu();
 
